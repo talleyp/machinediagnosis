@@ -50,8 +50,8 @@ shinyServer(function(input, output, session) {
 
     hist(zipsInBounds()$hddall,
       breaks = centileBreaks,
-      main = "Heart Disease death in Indiana counties",
-      xlab = "Death per hundred thousand",
+      main = "Heart Disease death in Indiana",
+      xlab = "Death rate",
       xlim = range(allzips$hddall),
       col = '#00DD00',
       border = 'white')
@@ -62,8 +62,8 @@ shinyServer(function(input, output, session) {
     if (nrow(zipsInBounds()) == 0)
       return(NULL)
 
-    print(xyplot(medianincome ~ nohsd25, data = zipsInBounds(), xlim = range(allzips$nohsd25, na.rm=T), 
-                 ylim = range(allzips$medianincome, na.rm = T)))
+    print(xyplot(hddall ~ medianincome, data = zipsInBounds(), xlim = range(allzips$medianincome, na.rm=T), 
+                 ylim = range(allzips$hddall, na.rm = T)))
   })
 
   # This observer is responsible for maintaining the circles and legend,
@@ -91,12 +91,12 @@ shinyServer(function(input, output, session) {
   showZipcodePopup <- function(county, lat, lng) {
     selectedZip <- allzips[allzips$latitude == lat & allzips$longitude== lng,]
     content <- as.character(tagList(
-      tags$h4("Heart Disease Death of County:", as.integer(selectedZip$hddall)),
+      tags$h4("Heart Disease Death:", as.integer(selectedZip$hddall)),
       tags$strong(HTML(sprintf("%s, %s",
         selectedZip$county, "IN"
       ))), tags$br(),
       sprintf("Median household income: %s", dollar(selectedZip$medianincome * 1000)), tags$br(),
-      sprintf("Percent of adults with High School degree: %s%%", as.integer(selectedZip$nohsd25)), tags$br(),
+      sprintf("Adults without High School degree: %s%%", as.integer(selectedZip$nohsd25)), tags$br(),
       sprintf("Adult population: %s", selectedZip$totalpop)
     ))
     leafletProxy("map") %>% addPopups(lng, lat, content, layerId = county)
@@ -115,61 +115,36 @@ shinyServer(function(input, output, session) {
   })
 
 
-  ## Data Explorer ###########################################
-# 
-#   observe({
-#     cities <- if (is.null(input$states)) character(0) else {
-#       filter(cleantable, State %in% input$states) %>%
-#         `$`('City') %>%
-#         unique() %>%
-#         sort()
-#     }
-#     stillSelected <- isolate(input$cities[input$cities %in% cities])
-#     updateSelectInput(session, "cities", choices = cities,
-#       selected = stillSelected)
-#   })
-# 
-#   observe({
-#     zipcodes <- if (is.null(input$states)) character(0) else {
-#       cleantable %>%
-#         filter(State %in% input$states,
-#           is.null(input$cities) | City %in% input$cities) %>%
-#         `$`('Zipcode') %>%
-#         unique() %>%
-#         sort()
-#     }
-#     stillSelected <- isolate(input$zipcodes[input$zipcodes %in% zipcodes])
-#     updateSelectInput(session, "zipcodes", choices = zipcodes,
-#       selected = stillSelected)
-#   })
-# 
-#   observe({
-#     if (is.null(input$goto))
-#       return()
-#     isolate({
-#       map <- leafletProxy("map")
-#       map %>% clearPopups()
-#       dist <- 0.5
-#       zip <- input$goto$zip
-#       lat <- input$goto$lat
-#       lng <- input$goto$lng
-#       showZipcodePopup(zip, lat, lng)
-#       map %>% fitBounds(lng - dist, lat - dist, lng + dist, lat + dist)
-#     })
-#   })
-# 
-#   output$ziptable <- DT::renderDataTable({
-#     df <- cleantable %>%
-#       filter(
-#         Score >= input$minScore,
-#         Score <= input$maxScore,
-#         is.null(input$states) | State %in% input$states,
-#         is.null(input$cities) | City %in% input$cities,
-#         is.null(input$zipcodes) | Zipcode %in% input$zipcodes
-#       ) %>%
-#       mutate(Action = paste('<a class="go-map" href="" data-lat="', Lat, '" data-long="', Long, '" data-zip="', Zipcode, '"><i class="fa fa-crosshairs"></i></a>', sep=""))
-#     action <- DT::dataTableAjax(session, df)
-# 
-#     DT::datatable(df, options = list(ajax = list(url = action)), escape = FALSE)
-#   })
+  ## Machine Diagnosis ###########################################
+
+  observe({
+      predFrame$age <- input$age
+      predFrame$sex <- input$sex 
+      predFrame$cp <- input$cp
+      predFrame$testbps <- input$testbps 
+      predFrame$ chol <- input$ chol
+      predFrame$fbs <- input$fbs
+      predFrame$restecg <- input$restecg
+      predFrame$thalach <- input$thalach
+      predFrame$exang <- input$exang
+      predFrame$oldpeak <- input$oldpeak
+      predFrame$slope <- input$slope
+      predFrame$ca  <- input$ca 
+      predFrame$thal <- input$thal
+      
+      numpredict <- predict(rfMod, predFrame)
+      if(numpredict == 1){
+        output$prediction <- renderText({
+                  "There is a large reason to suspect the patient has heart disease"
+        })
+      }
+      else{
+        output$prediction <- renderText({
+          "Based on the input provided, there is little reason to believe the patient has heart disease"
+        })
+      }
+      
+      
+  })
+  
 })
