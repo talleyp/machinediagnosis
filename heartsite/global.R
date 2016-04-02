@@ -19,6 +19,8 @@ counties <- counties[,c(4,11,12)]
 colnames(counties) <- c("county","latitude","longitude")
 
 indicounty <- merge(x = indi, y = counties, by = "county")
+indicounty$id <- 1:nrow(indicounty)
+
 #indicounty$county <- as.character.factor(indicounty$county)
 
 # Machine learning
@@ -83,3 +85,12 @@ predFrame <- data.frame(age=numeric(),
                         ca=numeric(),
                         thal=factor())
 predFrame[1,] <- NA
+
+#Choices for drop down
+vars <- c(
+  "Heart disease death" = "hddall",
+  "No High school education" = "nohsd25",
+  "Poverty" = "poverty",
+  "Median income" = "medianincome",
+  "Population" = "totalpop"
+)

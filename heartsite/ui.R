@@ -1,14 +1,6 @@
 library(shiny)
 library(leaflet)
-
-# Choices for drop-downs
-vars <- c(
-  "Heart disease death" = "hddall",
-  "High school education" = "nohsd25",
-  "Poverty" = "poverty",
-  "Median income" = "medianincome",
-  "Population" = "totalpop"
-)
+library(ggvis)
 
 
 shinyUI(navbarPage("Heart disease", id="nav",
@@ -48,63 +40,76 @@ shinyUI(navbarPage("Heart disease", id="nav",
     )
   ),
 
-   tabPanel("Diagnosis",
-      sidebarPanel(
-      submitButton("Diagnose"),
-      # Age input, numeric input
-      numericInput('age', label ="Age", value = 50),
-      
-      # Sex 
-      selectizeInput('sex', 'Sex', choices = list(`Male`=factor(1), `Female` = factor(0),`Unknown`=NA)),
-      
-      # Chest Pain
-      selectizeInput('cp', 'Chest Pain', choices = list(`typical angina` = factor(1), 
-                                                        `atypical angina` = factor(2), `non-anginal pain` = factor(3), 
-                                                        asymptomatic  = factor(4),`Unknown`=NA)),
-      
-      # Resting blood pressure
-      numericInput('trestbps', label ="Resting blood pressure (in mm Hg)", value = 150),
-      
-      # Chol
-      numericInput('chol', label ="Serum cholestoral in mm/dl", value = 250),
-      
-      # FBS
-      selectizeInput('fbs', label ="Fasting blood sugar more than 120mg/dl?", 
-                     choices = list(`Yes`=1, `No` = 0,`Unknown`=NA)),
-      
-      # restecg
-      selectizeInput('restecg', label ="Resting electrocariographic results", 
-                     choices = list(`Normal`=factor(0), `ST-T wave abnormality` = factor(1),
-                                    `Probable or definite left ventricular hypertropy by Estes Criteria` = factor(2),
-                                    `Unknown`=NA )),
-      
-      # thalach
-      numericInput('thalach', label ="Maximum hearthrate achieved during exercise test", value = 150),
-      
-      # exang
-      selectizeInput('exang', label ="Exercise induced angina", 
-                     choices = list(`Yes`=factor(1), `No`=factor(0),`Unknown`=NA)),
-      
-      # oldpeak
-      numericInput('oldpeak', label ="ST depression induced by exercise relative to rest", value = 1.5),
-      
-      # slope
-      selectizeInput('slope', label ="Slope of the peak exercise ST segment", 
-                   choices = list(`Upsloping`=factor(1), `Flat`=factor(2), 
-                                  `Downsloping`=factor(3),`Unknown`=NA)),
-      
-      # ca
-      numericInput('ca', label ="Numer of major vessels (0-3) colored by flourosopy", value = 0),
-      
-      # Thal
-      selectizeInput('thal', label ="Thal", 
-                   choices = list(`Normal`=factor(3), `Fixed defect`=factor(6), 
-                                  `Reversable defect`=factor(7),`Unknown`=NA)),
-      submitButton("Diagnose")
-    ),
-    mainPanel(
-      verbatimTextOutput('prediction')
-    )
-   ), title = 'Variables for probable heart disease'
+ tabPanel("Diagnosis",
+    sidebarPanel(
+    
+    # Age input, numeric input
+    numericInput('age', label ="Age", value = 50),
+    
+    # Sex 
+    selectizeInput('sex', 'Sex', choices = list(`Male`=factor(1), `Female` = factor(0),`Unknown`=factor(1) )),
+    
+    # Chest Pain
+    selectizeInput('cp', 'Chest Pain', choices = list(`typical angina` = factor(1), 
+                                                      `atypical angina` = factor(2), `non-anginal pain` = factor(3), 
+                                                      asymptomatic  = factor(4),`Unknown`=factor(1) )),
+    
+    # Resting blood pressure
+    numericInput('trestbps', label ="Resting blood pressure (in mm Hg)", value = 150),
+    
+    # Chol
+    numericInput('chol', label ="Serum cholestoral in mm/dl", value = 250),
+    
+    # FBS
+    selectizeInput('fbs', label ="Fasting blood sugar more than 120mg/dl?", 
+                   choices = list(`Yes`=1, `No` = 0,`Unknown`=factor(1))),
+    
+    # restecg
+    selectizeInput('restecg', label ="Resting electrocariographic results", 
+                   choices = list(`Normal`=factor(0), `ST-T wave abnormality` = factor(1),
+                                  `Probable or definite left ventricular hypertropy by Estes Criteria` = factor(2),
+                                  `Unknown`=factor(1) )),
+    
+    # thalach
+    numericInput('thalach', label ="Maximum hearthrate achieved during exercise test", value = 150),
+    
+    # exang
+    selectizeInput('exang', label ="Exercise induced angina", 
+                   choices = list(`Yes`=factor(1), `No`=factor(0),`Unknown`=factor(1))),
+    
+    # oldpeak
+    numericInput('oldpeak', label ="ST depression induced by exercise relative to rest", value = 1.5),
+    
+    # slope
+    selectizeInput('slope', label ="Slope of the peak exercise ST segment", 
+                 choices = list(`Upsloping`=factor(1), `Flat`=factor(2), 
+                                `Downsloping`=factor(3),`Unknown`=factor(1))),
+    
+    # ca
+    numericInput('ca', label ="Numer of major vessels (0-3) colored by flourosopy", value = 0),
+    
+    # Thal
+    selectizeInput('thal', label ="Thalassemia", 
+                 choices = list(`Normal`=factor(3), `Fixed defect`=factor(6), 
+                                `Reversable defect`=factor(7),`Unknown`=factor(3) ))
+  ),
+  mainPanel(
+    verbatimTextOutput('prediction'))
+ ), 
 
+  tabPanel("Data explorer",
+    fluidRow(
+    column(3,
+       wellPanel(
+         selectInput("xvar", "X-axis variable", vars, selected = "poverty"),
+         selectInput("yvar", "Y-axis variable", vars, selected = "hddall")
+         ),
+       column(9,
+              ggvisOutput("plot1")
+              )
+       )
+    )
+  ),title = 'Heart disease explorer'
+  
  ))
+

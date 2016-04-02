@@ -4,6 +4,7 @@ library(RColorBrewer)
 library(scales)
 library(lattice)
 library(dplyr)
+library(ggvis)
 
 # Leaflet bindings are a bit slow; for now we'll just sample to compensate
 allzips <- indicounty
@@ -121,7 +122,7 @@ shinyServer(function(input, output, session) {
       predFrame$age <- input$age
       predFrame$sex <- input$sex 
       predFrame$cp <- input$cp
-      predFrame$testbps <- input$testbps 
+      predFrame$trestbps <- input$trestbps 
       predFrame$ chol <- input$ chol
       predFrame$fbs <- input$fbs
       predFrame$restecg <- input$restecg
@@ -132,19 +133,58 @@ shinyServer(function(input, output, session) {
       predFrame$ca  <- input$ca 
       predFrame$thal <- input$thal
       
-      numpredict <- predict(rfMod, predFrame)
+      numpredict <-tryCatch({
+        predict(rfMod, predFrame)
+      },
+        error=function(cond){
+          -1
+        }
+      )
       if(numpredict == 1){
         output$prediction <- renderText({
                   "There is a large reason to suspect the patient has heart disease"
         })
       }
-      else{
+      else if(numpredict == 0){
         output$prediction <- renderText({
-          "Based on the input provided, there is little reason to believe the patient has heart disease"
+          "Based on the input provided.\nThere is little reason to believe the patient has heart disease"
         })
       }
+      else{
+        output$prediction <- renderText({
+          "Cannot determine an answer."
+        })
+      }
+    }) 
+    ## Data Explorer ###########################################
+    # Tooltip function for returning County name
+    county_tooltip <- function(x){
+      if(is.null(x)) return(NULL)
+      row <- indicounty[indicounty$id == x$id, ]
+      paste0(row$county, " County")
+    }
+    # A reactive expression with the ggvis plot
+    vis <- reactive({
+      # Lables for axes
+      xvar_name <- names(vars)[vars == input$xvar]
+      yvar_name <- names(vars)[vars == input$yvar]
       
+      # Normally we could do something like props(x = ~BoxOffice, y = ~Reviews),
+      # but since the inputs are strings, we need to do a little more work.
+      xvar <- prop("x", as.symbol(input$xvar))
+      yvar <- prop("y", as.symbol(input$yvar))
       
+      indicounty %>%
+        ggvis(x = xvar, y = yvar, key := ~id) %>%
+        layer_points(size := 50, size.hover := 200,
+                     fillOpacity := 0.2, fillOpacity.hover := 0.5) %>%
+        add_axis("x", title = xvar_name) %>%
+        add_axis("y", title = yvar_name) %>%
+        add_tooltip(county_tooltip, "hover") %>%
+        set_options(width = 500, height = 500)
+    })
+    
+    vis %>% bind_shiny("plot1")
   })
   
-})
+
