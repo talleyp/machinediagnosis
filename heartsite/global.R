@@ -82,4 +82,4 @@ predFrame <- data.frame(age=numeric(),
                         slope=factor(),
                         ca=numeric(),
                         thal=factor())
-predFrame[1,] <- 0
+predFrame[1,] <- NA
